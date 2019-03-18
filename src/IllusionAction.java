@@ -10,25 +10,28 @@ import com.intellij.psi.PsiManager;
 import com.intellij.psi.xml.XmlDocument;
 import com.intellij.psi.xml.XmlFile;
 import com.intellij.psi.xml.XmlTag;
+import com.intellij.ui.components.JBTextField;
+import com.intellij.util.Function;
+import com.intellij.util.execution.ParametersListUtil;
+
 import java.util.*;
 import java.lang.*;
 import java.io.*;
 
 public class IllusionAction extends AnAction {
-
     @Override
     public void actionPerformed(AnActionEvent e) {
         Project project = e.getData(PlatformDataKeys.PROJECT);
-        /*String text = Messages.showInputDialog(project,
-                "What is your name?",
-                "Input your name",
+        // viewFrom, layout file name
+        String text = Messages.showInputDialog(project,
+                "Input your config:",
+                "Android Illusion",
                 Messages.getQuestionIcon());
-        Messages.showMessageDialog(project,
-                "Hello, " + text + "!\n I am glad to see you.",
-                "Information",
-                Messages.getInformationIcon());*/
 
-        String layoutFileName = "main_activity";
+        String[] array = text.split(",");
+        String viewFrom = array[0];
+
+        String layoutFileName = array[1];
         VirtualFile virtualFile = LocalFileSystem.getInstance().findFileByPath(getLayoutFilePath(project, layoutFileName));
         PsiFile layoutPsiFile = PsiManager.getInstance(project).findFile(virtualFile);
         XmlFile xmlFile = (XmlFile) layoutPsiFile;
@@ -38,10 +41,69 @@ public class IllusionAction extends AnAction {
 
         proChild(list, child);
 
-        Messages.showMessageDialog(project,
-                list.toString(),
-                "Information",
-                Messages.getInformationIcon());
+        /*Messages.showMessageDialog(project,
+                buildMsg(list, viewFrom),
+                "Android Illusion",
+                Messages.getInformationIcon());*/
+        Messages.showTextAreaDialog(new JBTextField(buildMsg(list, viewFrom)), "Android Illusion", null, new Function<java.lang.String, java.util.List<java.lang.String>>() {
+            @java.lang.Override
+            public java.util.List<java.lang.String> fun(java.lang.String string) {
+                String[] array = string.split("<");
+                ArrayList<String> list = new ArrayList<String>();
+                for (String item : array) {
+                    list.add(item);
+                }
+                return list;
+            }
+        }, ParametersListUtil.DEFAULT_LINE_JOINER);
+    }
+
+    private String buildMsg(List<ViewBean> list, String viewFrom) {
+        StringBuilder defineSb = new StringBuilder();
+        StringBuilder assignSb = new StringBuilder();
+        for (ViewBean item : list) {
+            String varName = underline2Camel(item.getId());
+
+            defineSb.append(String.format("private %s %s;<", item.getName(), varName));
+
+            boolean binding = ("binding".equals(viewFrom));
+            if (binding) {
+                assignSb.append(String.format("%s = binding.%s;<", varName, underline2Binding(item.getId())));
+            } else {
+                assignSb.append(String.format("%s = %s.findViewById(R.id.%s);<", varName, viewFrom, item.getId()));
+            }
+        }
+
+        return defineSb + "<" + assignSb;
+    }
+
+    private String underline2Camel(String raw) {
+        String[] split = raw.split("_");
+        StringBuilder sb = new StringBuilder();
+        sb.append("m");
+        for (String item : split) {
+            char firstChar = item.charAt(0);
+            sb.append(Character.toUpperCase(firstChar));
+            sb.append(item.substring(1));
+        }
+        return sb.toString();
+    }
+
+    private String underline2Binding(String raw) {
+        String[] split = raw.split("_");
+        StringBuilder sb = new StringBuilder();
+        boolean first = true;
+        for (String item : split) {
+            if (first) {
+                first = false;
+                sb.append(item);
+                continue;
+            }
+            char firstChar = item.charAt(0);
+            sb.append(Character.toUpperCase(firstChar));
+            sb.append(item.substring(1));
+        }
+        return sb.toString();
     }
 
     private void proChild(List<ViewBean> list, XmlTag root) {

@@ -1,3 +1,5 @@
+package com.vgaw.android.plugin.illusion;
+
 public class ViewBean {
     private String name;
     private String id;
@@ -27,7 +29,7 @@ public class ViewBean {
 
     @java.lang.Override
     public java.lang.String toString() {
-        return "ViewBean{" +
+        return "com.vgaw.android.plugin.illusion.ViewBean{" +
                 "name='" + name + '\'' +
                 ", id='" + id + '\'' +
                 '}';

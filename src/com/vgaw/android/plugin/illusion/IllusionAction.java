@@ -1,3 +1,5 @@
+package com.vgaw.android.plugin.illusion;
+
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.PlatformDataKeys;
@@ -7,13 +9,13 @@ import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
+import com.intellij.psi.xml.XmlAttribute;
 import com.intellij.psi.xml.XmlDocument;
 import com.intellij.psi.xml.XmlFile;
 import com.intellij.psi.xml.XmlTag;
 import com.intellij.ui.components.JBTextField;
 import com.intellij.util.Function;
 import com.intellij.util.execution.ParametersListUtil;
-
 import java.util.*;
 import java.lang.*;
 import java.io.*;
@@ -107,12 +109,15 @@ public class IllusionAction extends AnAction {
     }
 
     private void proChild(List<ViewBean> list, XmlTag root) {
-        String rawViewName = root.getName();
-        String rawId = root.getAttribute("android:id").getValue();
-        String viewId = getId(rawId);
-        String viewName = getViewName(rawViewName);
+        XmlAttribute attribute = root.getAttribute("android:id");
+        if (attribute != null) {
+            String rawViewName = root.getName();
+            String rawId = attribute.getValue();
+            String viewId = getId(rawId);
+            String viewName = getViewName(rawViewName);
 
-        list.add(new ViewBean(viewName, viewId));
+            list.add(new ViewBean(viewName, viewId));
+        }
 
         XmlTag[] children = root.getSubTags();
         if (children != null && children.length > 0) {
